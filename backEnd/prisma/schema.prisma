@@ -1,0 +1,441 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model address {
+  address_id            BigInt   @id @default(autoincrement())
+  user_id               BigInt
+  title                 String?  @db.VarChar(50)
+  street_address        String   @db.VarChar(150)
+  number                String?  @db.VarChar(20)
+  apartment_floor       String?  @db.VarChar(20)
+  city                  String   @db.VarChar(100)
+  state_province        String?  @db.VarChar(100)
+  postal_code           String?  @db.VarChar(20)
+  latitude              Decimal? @db.Decimal(10, 8)
+  longitude             Decimal? @db.Decimal(11, 8)
+  delivery_instructions String?
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+  users                 users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_addresses_users")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model companies {
+  company_id      BigInt            @id @default(autoincrement())
+  name            String            @db.VarChar(150)
+  legal_name      String?           @db.VarChar(150)
+  cuit_tax_id     String?           @db.VarChar(30)
+  phone           String?           @db.VarChar(30)
+  whatsapp        String?           @db.VarChar(30)
+  email           String?           @db.VarChar(255)
+  address         String?           @db.VarChar(200)
+  city            String?           @db.VarChar(100)
+  state_province  String?           @db.VarChar(100)
+  postal_code     String?           @db.VarChar(20)
+  is_active       Boolean           @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime          @default(now()) @db.Timestamptz(6)
+  company_images  company_images[]
+  job_position    job_position[]
+  operating_hours operating_hours[]
+  order_payment   order_payment[]
+  purchase        purchase[]
+  raw_material    raw_material[]
+  supplier        supplier[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model company_images {
+  company_image_id BigInt    @id @default(autoincrement())
+  company_id       BigInt
+  image_id         BigInt
+  companies        companies @relation(fields: [company_id], references: [company_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_company_images_company")
+  images           images    @relation(fields: [image_id], references: [image_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_company_images_image")
+
+  @@unique([company_id, image_id], map: "uq_company_image")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model employee_payment {
+  employee_payment_id BigInt                    @id @default(autoincrement())
+  user_id             BigInt
+  payment_date        DateTime                  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  amount              Decimal                   @default(0.00) @db.Decimal(10, 2)
+  payment_type        payroll_payment_type_enum
+  notes               String?
+  created_at          DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                  @default(now()) @db.Timestamptz(6)
+  users               users                     @relation(fields: [user_id], references: [user_id], onUpdate: NoAction, map: "fk_employee_payment_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model employee_shift {
+  employee_shift_id BigInt       @id @default(autoincrement())
+  user_id           BigInt
+  job_position_id   BigInt
+  shift_date        DateTime     @db.Date
+  base_salary       Decimal      @default(0.00) @db.Decimal(10, 2)
+  overtime_amount   Decimal      @default(0.00) @db.Decimal(10, 2)
+  notes             String?
+  created_at        DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime     @default(now()) @db.Timestamptz(6)
+  job_position      job_position @relation(fields: [job_position_id], references: [job_position_id], onUpdate: NoAction, map: "fk_employee_shift_job_position")
+  users             users        @relation(fields: [user_id], references: [user_id], onUpdate: NoAction, map: "fk_employee_shift_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model images {
+  image_id       BigInt           @id @default(autoincrement())
+  url            String
+  alt_text       String?          @db.VarChar(255)
+  type           image_type_enum
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  company_images company_images[]
+  product_image  product_image[]
+  users          users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model job_position {
+  job_position_id  BigInt            @id @default(autoincrement())
+  company_id       BigInt
+  name             job_position_enum
+  description      String?
+  base_hourly_rate Decimal           @default(0.00) @db.Decimal(10, 2)
+  created_at       DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime          @default(now()) @db.Timestamptz(6)
+  employee_shift   employee_shift[]
+  companies        companies         @relation(fields: [company_id], references: [company_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_job_position_company")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model operating_hours {
+  operating_hours_id BigInt    @id @default(autoincrement())
+  company_id         BigInt
+  day_of_week        Int       @db.SmallInt
+  open_time          DateTime? @db.Time(6)
+  close_time         DateTime? @db.Time(6)
+  is_closed          Boolean   @default(false)
+  companies          companies @relation(fields: [company_id], references: [company_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_operating_hours_company")
+
+  @@unique([company_id, day_of_week], map: "uq_company_day")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_item {
+  order_item_id    BigInt        @id @default(autoincrement())
+  order_payment_id BigInt
+  product_id       BigInt
+  quantity         Int           @default(1)
+  unit_price       Decimal       @default(0.00) @db.Decimal(10, 2)
+  subtotal         Decimal?      @default(dbgenerated("((quantity)::numeric * unit_price)")) @db.Decimal(10, 2)
+  item_notes       String?       @db.VarChar(255)
+  order_payment    order_payment @relation(fields: [order_payment_id], references: [order_payment_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_order_item_order")
+  product          product       @relation(fields: [product_id], references: [product_id], onUpdate: NoAction, map: "fk_order_item_product")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_payment {
+  order_payment_id    BigInt              @id @default(autoincrement())
+  user_id             BigInt
+  company_id          BigInt
+  payment_method_id   BigInt?
+  order_type          order_type_enum     @default(NONE)
+  order_status        order_status_enum   @default(NONE)
+  payment_status      payment_status_enum @default(NONE)
+  payment_provider_id String?             @db.VarChar(150)
+  subtotal            Decimal             @default(0.00) @db.Decimal(10, 2)
+  delivery_fee        Decimal             @default(0.00) @db.Decimal(10, 2)
+  discount_amount     Decimal             @default(0.00) @db.Decimal(10, 2)
+  total_amount        Decimal             @default(0.00) @db.Decimal(10, 2)
+  notes               String?
+  created_at          DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime            @default(now()) @db.Timestamptz(6)
+  order_item          order_item[]
+  companies           companies           @relation(fields: [company_id], references: [company_id], onUpdate: NoAction, map: "fk_order_payment_company")
+  user_card           user_card?          @relation(fields: [payment_method_id], references: [user_card_id], onUpdate: NoAction, map: "fk_order_payment_method")
+  users               users               @relation(fields: [user_id], references: [user_id], onUpdate: NoAction, map: "fk_order_payment_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product {
+  product_id          BigInt                @id @default(autoincrement())
+  name                String                @db.VarChar(150)
+  description         String?
+  price               Decimal               @default(0.00) @db.Decimal(10, 2)
+  tax_rate            Decimal?              @default(0.00) @db.Decimal(5, 2)
+  discount_percentage Decimal?              @default(0.00) @db.Decimal(5, 2)
+  promotional_price   Decimal?              @db.Decimal(10, 2)
+  is_bestseller       Boolean               @default(false)
+  is_on_sale          Boolean               @default(false)
+  is_available        Boolean               @default(true)
+  category            product_category_enum
+  created_at          DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime              @default(now()) @db.Timestamptz(6)
+  order_item          order_item[]
+  product_image       product_image[]
+  product_ingredient  product_ingredient[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_image {
+  product_image_id BigInt  @id @default(autoincrement())
+  product_id       BigInt
+  image_id         BigInt
+  images           images  @relation(fields: [image_id], references: [image_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_product_image_image")
+  product          product @relation(fields: [product_id], references: [product_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_product_image_product")
+
+  @@unique([product_id, image_id], map: "uq_product_image")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_ingredient {
+  product_ingredient_id BigInt       @id @default(autoincrement())
+  product_id            BigInt
+  raw_material_id       BigInt
+  quantity_required     Decimal      @default(0.000) @db.Decimal(10, 3)
+  product               product      @relation(fields: [product_id], references: [product_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_product_ingredient_product")
+  raw_material          raw_material @relation(fields: [raw_material_id], references: [raw_material_id], onUpdate: NoAction, map: "fk_product_ingredient_raw_material")
+
+  @@unique([product_id, raw_material_id], map: "uq_product_raw_material")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model purchase {
+  purchase_id         BigInt                   @id @default(autoincrement())
+  company_id          BigInt
+  created_by_user_id  BigInt
+  supplier_id         BigInt
+  purchase_date       DateTime                 @default(dbgenerated("CURRENT_DATE")) @db.Date
+  payment_method_type payment_method_type_enum @default(CASH)
+  total_cost          Decimal                  @default(0.00) @db.Decimal(10, 2)
+  notes               String?
+  created_at          DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                 @default(now()) @db.Timestamptz(6)
+  companies           companies                @relation(fields: [company_id], references: [company_id], onUpdate: NoAction, map: "fk_purchase_company")
+  supplier            supplier                 @relation(fields: [supplier_id], references: [supplier_id], onUpdate: NoAction, map: "fk_purchase_supplier")
+  users               users                    @relation(fields: [created_by_user_id], references: [user_id], onUpdate: NoAction, map: "fk_purchase_user")
+  purchase_item       purchase_item[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model purchase_item {
+  purchase_item_id BigInt       @id @default(autoincrement())
+  purchase_id      BigInt
+  raw_material_id  BigInt
+  quantity_bought  Decimal      @default(0.000) @db.Decimal(10, 3)
+  unit_cost_price  Decimal      @default(0.00) @db.Decimal(10, 2)
+  subtotal         Decimal?     @default(dbgenerated("(quantity_bought * unit_cost_price)")) @db.Decimal(10, 2)
+  purchase         purchase     @relation(fields: [purchase_id], references: [purchase_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchase_item_purchase")
+  raw_material     raw_material @relation(fields: [raw_material_id], references: [raw_material_id], onUpdate: NoAction, map: "fk_purchase_item_raw_material")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model raw_material {
+  raw_material_id    BigInt                     @id @default(autoincrement())
+  company_id         BigInt
+  name               String                     @db.VarChar(150)
+  category           raw_material_category_enum
+  unit_of_measure    unit_of_measure_enum
+  current_stock      Decimal                    @default(0.000) @db.Decimal(10, 3)
+  min_stock_alert    Decimal                    @default(0.000) @db.Decimal(10, 3)
+  last_cost_price    Decimal                    @default(0.00) @db.Decimal(10, 2)
+  created_at         DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime                   @default(now()) @db.Timestamptz(6)
+  product_ingredient product_ingredient[]
+  purchase_item      purchase_item[]
+  companies          companies                  @relation(fields: [company_id], references: [company_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_raw_material_company")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model role {
+  role_id   BigInt      @id @default(autoincrement())
+  name      String      @unique @db.VarChar(50)
+  user_role user_role[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model supplier {
+  supplier_id  BigInt     @id @default(autoincrement())
+  company_id   BigInt
+  name         String     @db.VarChar(150)
+  phone        String?    @db.VarChar(30)
+  contact_name String?    @db.VarChar(150)
+  created_at   DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime   @default(now()) @db.Timestamptz(6)
+  purchase     purchase[]
+  companies    companies  @relation(fields: [company_id], references: [company_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_supplier_company")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_card {
+  user_card_id     BigInt                   @id @default(autoincrement())
+  user_id          BigInt
+  provider         String                   @db.VarChar(50)
+  token            String                   @db.VarChar(255)
+  card_brand       String                   @db.VarChar(50)
+  last_four_digits String                   @db.VarChar(4)
+  cardholder_name  String                   @db.VarChar(150)
+  expiration_month Int
+  expiration_year  Int
+  is_default       Boolean                  @default(false)
+  created_at       DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime                 @default(now()) @db.Timestamptz(6)
+  method_type      payment_method_type_enum @default(CREDIT_CARD)
+  order_payment    order_payment[]
+  users            users                    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_card_user")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_role {
+  user_role_id BigInt @id @default(autoincrement())
+  user_id      BigInt
+  role_id      BigInt
+  role         role   @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_role_role")
+  users        users  @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_role_user")
+
+  @@unique([user_id, role_id], map: "uq_user_role")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  user_id          BigInt             @id @default(autoincrement())
+  auth_uid         String             @unique @db.VarChar(128)
+  name             String             @db.VarChar(100)
+  last_name        String             @db.VarChar(100)
+  email            String             @unique @db.VarChar(255)
+  phone            String?            @db.VarChar(30)
+  is_active        Boolean            @default(false)
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime           @default(now()) @db.Timestamptz(6)
+  image_id         BigInt?
+  address          address[]
+  employee_payment employee_payment[]
+  employee_shift   employee_shift[]
+  order_payment    order_payment[]
+  purchase         purchase[]
+  user_card        user_card[]
+  user_role        user_role[]
+  images           images?            @relation(fields: [image_id], references: [image_id], onUpdate: NoAction, map: "fk_users_images")
+}
+
+enum image_type_enum {
+  COMPANY_LOGO
+  COMPANY_BANNER
+  COMPANY_SECONDARY
+  PRODUCT_MAIN
+  PRODUCT_SECONDARY
+  CATEGORY
+  USER_AVATAR
+  RECEIPT_PROOF
+}
+
+enum job_position_enum {
+  BAKER
+  COOK
+  CASHIER
+  KITCHEN_HELPER
+  DELIVERY
+  OTHER
+}
+
+enum order_status_enum {
+  NONE
+  PENDING
+  IN_PREPARATION
+  ON_THE_WAY
+  DELIVERED
+  CANCELLED
+}
+
+enum order_type_enum {
+  NONE
+  DELIVERY
+  TAKEAWAY
+}
+
+enum payment_method_type_enum {
+  NONE
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  MERCADO_PAGO
+  BANK_TRANSFER
+}
+
+enum payment_status_enum {
+  NONE
+  PENDING
+  WAITING_FOR_APPROVAL
+  PAID
+  REJECTED
+  REFUNDED
+  WAITING_FOR_REFUND
+}
+
+enum payroll_payment_type_enum {
+  WEEKLY_SALARY
+  ADVANCE
+  OVERTIME
+  DEDUCTION_DRINK
+  DEDUCTION_OTHER
+}
+
+enum product_category_enum {
+  CARLITOS_AND_TRIPLES
+  BEERS
+  EMPANADAS
+  SODAS
+  CHEDDAR_BURGERS
+  BURGERS
+  JUICES
+  FRIES
+  PLATTERS_AND_MILANESAS
+  PIZZAS
+  SANDWICHES
+  PIES
+}
+
+enum raw_material_category_enum {
+  BAKERY
+  DAIRY_AND_CHEESE
+  MEAT
+  VEGETABLE
+  DISPOSABLE
+  BEVERAGE
+  CONDIMENT_AND_SAUCE
+  OTHER
+}
+
+enum unit_of_measure_enum {
+  KILOGRAM
+  GRAM
+  LITER
+  MILLILITER
+  UNIT
+  PACK
+  BOX
+}
