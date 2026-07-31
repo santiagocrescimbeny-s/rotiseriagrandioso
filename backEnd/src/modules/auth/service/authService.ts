@@ -7,23 +7,13 @@ export class AuthService {
             throw new BadRequestException('Firebase user does not have a valid email');
         }
 
+        
         let user = await prisma.users.findUnique({
             where: { email: firebaseUser.email }
         });
 
         if (!user) {
-            const nameParts = (firebaseUser.name || 'User').split(' ');
-            const firstName = nameParts[0];
-            const lastName = nameParts.slice(1).join(' ');
-
-            user = await prisma.users.create({
-                data: {
-                    auth_uid: firebaseUser.uid,
-                    email: firebaseUser.email,
-                    name: firstName,
-                    last_name: lastName || '',
-                }
-            });
+            throw new BadRequestException('User not found in the database');
         }
 
         return user;
